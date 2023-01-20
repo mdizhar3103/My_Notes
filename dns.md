@@ -69,3 +69,51 @@ dig @localhost test.com
 dig @localhost m1.test.com
 dig @localhost test.com ANY
 ```
+
+-----------------------
+# Configuring DNSMasq
+```bash
+yum install -y dnsmasq
+groupadd -r dnsmasq 
+useradd -rg dnsmasq dnsmasq
+cp /etc/dnsmasq.conf /etc/dnsmasq.conf_bak
+ls -l /etc/dnsmasq.d/
+vim /etc/dnsmasq.conf
+    listen-address=127.0.0.1
+    port=53
+    bind-interfaces
+    user=dnsmasq
+    group=dnsmasq
+    pid-file=/var/run/dnsmasq.pid
+    resolv-file=/etc/resolv.dnsmasq
+    no-hosts
+
+vim /etc/resolv.dnsmasq
+    # add the following line
+    nameserver 8.8.8.8
+    nameserver 8.8.4.4
+
+systemctl restart dnsmasq
+systemctl enable dnsmasq --now
+systemctl status dnsmasq
+
+# adding domain server
+vim /etc/dnsmasq.conf
+    listen-address=127.0.0.1,<dnsserver_ip>
+    domain-needed
+    bogus-priv
+    dns-forward-max=100
+    cache-size=500
+    port=53
+    bind-interfaces
+    user=dnsmasq
+    group=dnsmasq
+    pid-file=/var/run/dnsmasq.pid
+    resolv-file=/etc/resolv.dnsmasq
+    no-poll
+    no-hosts
+
+systemctl restart dnsmasq
+systemctl status dnsmasq
+netstat -tnlp
+```
