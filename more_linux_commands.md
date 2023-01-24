@@ -253,4 +253,15 @@ semanage login -l
 semanage user -l
 getenforce
 setenforce <value>      # value: 0 to disable selinux, 1 to enable
+
+getent passwd
+getent passwd /etc/nsswtich.conf
+getent group
+getent network
+getent services
+
+gpasswd -M <user1>,<user2> <grp_name>       # to add user in group for a password
+
+ausearch -m avc     # selinux module search
+
 ```
