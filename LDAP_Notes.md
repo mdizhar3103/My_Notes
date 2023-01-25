@@ -136,6 +136,59 @@ gidNumber: 4000
 >>> /usr/share/migrationtools/migrate_passwd.pl passwd user.ldif
 >>> vi user.ldif
     # change the user, uid, cn to specific username, uidNumber, gidNumber (make as we added group.ldif), homeDirectory
+    # a below similar data will be visible modify accordingly
+    dn: uid=izhar,ou=People,dc=izhar,dc=com
+    uid: izhar
+    cn: izhar
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: top
+    objectClass: shadowAccount
+    userPassword: {crypt}$6$Pwnn2OZp$Ic5kVTtxftMXVbyepnPMuMmYWWdlpTzFU.H5NFWCQBZlEfqFYMVc9VBqQbZ8iOMdYAFaeggjH3zdH/kydbqsF/
+    shadowLastChange: 19377
+    shadowMin: 0
+    shadowMax: 99999
+    shadowWarning: 7
+    loginShell: /bin/bash
+    uidNumber: 4000
+    gidNumber: 4000
+    homeDirectory: /home/opc
+    gecos: izhar local User
 >>> ldapadd -x -W -D "cn=Manager,dc=izhar,dc=com" -f user.ldif
 
 ```
+
+### LDAP Client
+ 
+```bash
+# adding DNS Server / LDAP server entry
+>>> vim /etc/hosts
+    <dnserver_ip/ldap_server_ip> dnsserver.izhar.com dnsserver
+    clientserver_ip clientserver.izhar.com clientserver
+>>> yum install oddjob oddjob-mkhomdir -y
+>>> systemctl start oddjobd
+>>> systemctl enable oddjobd
+>>> systemctl status oddjobd
+
+>>> yum install openldap-clients nss-pam-ldapd -y
+>>> authconfig-tui
+    # a gui will be open
+    # or instead we can user command line for the setup too as below
+>>> authconfig --enableldap --ldapserver=dnsserver.izhar.com --ldapbasedn="dc=izhar,dc=com" --enablemkhomedir --update
+>>> grep passw /etc/nsswitch.conf
+>>> getent passwd
+    # you will see the user we created in LDAP (izhar uid=4000)
+
+>>> su - izhar # ldapuser test
+    >>> id
+
+# listing group
+>>> getent group
+>>> grep ldap /etc/nsswitch.conf
+
+# getting LDAP informations
+>>> ldapsearch -x -H ldap://dnsserver.izhar.com -b dc=izhar,dc=com
+
+```
+
+
