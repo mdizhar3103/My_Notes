@@ -191,4 +191,143 @@ gidNumber: 4000
 
 ```
 
+### LDAP - olclogLevel
 
+- any: All debugging
+- none: No logging
+- conns: Log connections
+- filter: Search filters
+- stats: Conns, Ops, Results
+
+> Note: Sometimes 'stats' are useful, default is none.
+
+```bash
+# list current log level
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcLogLevel 
+>>> journalctl -f -n 0 -u slapd
+>>> ldapsearch -x -LLL -H ldapi:/// -b dc=izhar,dc=com dn  
+
+# modify loglevel
+>>> vim loglevel.ldif
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: any
+
+>>> ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f loglevel.ldif
+```
+
+### LDAP - oldDBIndex
+- Help in searching directories effectiviely
+- Search based on user UID
+- More index creation will cause more memory utilizations
+
+```bash
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcDbIndex
+
+# search in specific index
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase={1}mdb olcDbIndex
+
+# Default Index List
+olcDBIndex: objectClass eq
+olcDBIndex: cn,uid eq
+olcDBIndex: uidNumber,gidNumber eq
+olcDBIndex: member,memberUid eq
+    # eq = equality ('cn=admin')
+    # approx ('cn~=admyn')
+    # sub ('cn=adm*')
+
+# Deleting and Adding olcDbIndex
+# ------------------------------
+
+# list all attribute 
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase={1}mdb 
+
+# list only index attributes
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase={1}mdb olcDbIndex
+
+##### Note #####
+-L  : No comment
+-LL : No Summary
+-LLL: No Version
+
+>>> vim cnindex.ldif
+    dn: olcDatabase={1}mdb,cn=config
+    changetype: modify
+    delete: olcDbIndex
+    olcDbIndex: cn,uid eq
+
+    dn: olcDatabase={1}mdb,cn=config
+    changetype: modify
+    add: olcDbIndex
+    olcDbIndex: uid eq
+    olcDbIndex: cn eq,approx
+
+>>> ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f cnindex.ldif
+>>> ldapsearch -Q -LLL -Y EXTERNAL -H ldapi:/// -b cn=config olcDatabase={1}mdb olcDbIndex
+
+# now searching based on the above indexes created
+>>> ldapsearch -x -LLL -w -D cn=admin,dc=izhar,dc=com -b dc=izhar,dc=com "(cn~=admnin)"
+>>> ldapsearch -x -LLL -w -D cn=admin,dc=izhar,dc=com -b dc=izhar,dc=com "(cn=adm*)"
+```
+
+### LDAP - openLDAP users Authentication in Linux
+- Can be done by adding objectClasses **posixAccount** and **shadowAccount**.
+- If Linux Authentication is not required then not needed.
+- If Linux User belong to an LDAP Group then Posix Group must exits
+
+```bash
+>>> vim notRequireLinAuth.ldif
+    dn: cn=mdizhar,ou-people,dc=izhar,dc=com
+    objectClass: inetOrgPerson
+    sn: MdIzhar
+    givenName: Mohd
+    cn: mdizhar
+    userPassword: UserPassword1
+
+# Posix Group
+>>> vim posixgrp.ldif
+    dn: cn=ldapusers,ou=people,dc=izhar,dc=com
+    objectClass: posixGroup
+    cn: ldapusers
+    gidNumber: 4000
+
+# creating a Posix User
+>>> vim createPosixUser.ldif
+    dn: uid=mdizhar,ou=people,dc=izhar,dc=com
+    objectClass: inetOrgPerson
+    objectClass: posixAccount
+    objectClass: shadowAccount
+    uid: mdizhar
+    sn: Ahmad
+    givenName: Mohd
+    cn: mdizhar
+    uidNumber: 4002
+    gidNumber: 4002
+    userPassword: Password#123
+    loginShell: /bin/bash
+    homeDirectory: /home/mdizhar
+
+# adding attribute that doesn't exist
+>>> vim addUserAttributes.ldif
+    dn: cn=mdizhar,ou=people,dc=izhar,dc=com
+    changetype: modify
+    add: mail
+    mail: izhar@email.com
+
+# replacing attribute 
+>>> vim replaceUserAttributes.ldif
+    dn: cn=mdizhar,ou=people,dc=izhar,dc=com
+    changetype: modify
+    replace: mail
+    mail: mdizhar@email.com
+
+# removing attribute 
+>>> vim removeUserAttributes.ldif
+    dn: cn=mdizhar,ou=people,dc=izhar,dc=com
+    changetype: modify
+    delete: mail
+
+# deleting a user
+>>> ldapdelete -x -D cn=admin,dc=izhar,dc=com -w "cn=mdizhar,ou=people,dc=izhar,dc=com" 
+```
