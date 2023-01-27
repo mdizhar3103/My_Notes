@@ -331,3 +331,56 @@ olcDBIndex: member,memberUid eq
 # deleting a user
 >>> ldapdelete -x -D cn=admin,dc=izhar,dc=com -w "cn=mdizhar,ou=people,dc=izhar,dc=com" 
 ```
+
+### NSS & SSSD
+- NSS (Name Server Switch) allow to use both local and LDAP users for Linux Authentication
+- Not more than one LDAP Directory Tree can be used for authentication within NSS
+- System Security Services Daemon (SSSD) allows us to extend functionality of NSS, remember its doesn't replace NSS
+- Using SSSD, client devices can authenticate to one ore more LDAP Directories
+
+> Configure sssd To Work With Multiple Active Directory Domains in Different Forests (Doc ID 2829406.1) [Reference Link](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=460642642495057&parent=EXTERNAL_SEARCH&sourceId=HOWTO&id=2829406.1&_afrWindowMode=0&_adf.ctrl-state=m4o0a54p5_4)
+> [Ref Link](https://docs.oracle.com/en/operating-systems/oracle-linux/7/userauth/userauth-AuthenticationConfiguration.html#ol7-sssd-ldap)
+
+```bash
+>>> grep -F passwd /etc/nsswtich
+>>> getent passwd
+>>> cat /etc/auth-client-config/profile.d/ldap-auth-config 
+
+# Configuring SSSD
+>>> cat /etc/ldap.conf
+>>> # yum install sssd sssd-client
+>>> cat /etc/sssd/sssd.conf
+    # Configure SSSD LDAP Backend Client CA Certificate Location
+    [domain/default]
+
+    # Configure SSSD LDAP Backend Client CA Certificate Location
+    ldap_tls_cacertdir = /etc/openldap/cacerts
+
+    # Configure SSSD LDAP Backend to Use TLS For All Transactions
+    ldap_id_use_start_tls = True
+
+    [sssd]
+    config_file_version = 2
+    domains = IZHAR
+    services = nss, pam
+
+    # for active directory configurations
+    [domain/izhar.com]
+    ad_domain = izhar.com
+    krb5_realm = IZHAR.COM
+    realmd_tags = manages-system joined-with-some-server
+    cache_credentials = True
+    id_provider = ad
+    krb5_store_password_if_offline = True
+    default_shell = /bin/bash
+    ldap_id_mapping = True
+    use_fully_qualified_names = True
+    fallback_homedir = /home/%u@%d
+    access_provider = ad
+    ad_gpo_ignore_unreadable = True
+
+>>> chmod 600 /etc/sssd/sssd.conf
+
+# enable sssd
+>>> authconfig --update --enablesssd --enablesssdauth
+```
