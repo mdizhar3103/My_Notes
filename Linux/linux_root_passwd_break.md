@@ -11,6 +11,8 @@ After the boot is completed you will be prompted a shell and run the following c
 mount -o remount,rw /sysroot
 chroot /sysroot
 passwd root
+    # or we can use below command to restore selinux default labels (not needed but can be useful in some cases
+    >>> touch ./autorelabel   # using this might cause reboot to take long time, depending upon system.
 press ctrl+d    # (logout)
 mount -o remount,ro /sysroot
 exit
