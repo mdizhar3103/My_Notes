@@ -249,3 +249,43 @@ systemctl restart httpd
 curl localhost:1000/index.html          # will work
 
 ```
+
+### Configuring User home directories and Permission for Apache
+```bash
+cd /etc/httpd/conf.d/
+vim userdir.conf
+    # Look for UseDir and change to enabled
+    UseDir enabled
+    # and also Uncomment the UseDir public_html
+    UseDir public_html
+
+systemctl restart httpd
+# making user home dir to use for webserver
+su - username
+    cd ~
+    mkdir public_html
+    echo "My user page" > public_html/index.html
+    pwd             # must be home dir path
+    chmod 711 .
+    ls -ld .
+    chmod 755 public_html/
+    ls -ld public_html
+    ls -l public_html/index.html
+    curl localhost:1000/~<username>         # gives 301 Moved Permanently 
+    curl localhost:1000/~<username>/        # 403 forbidden
+    curl localhost:1000/~<username>/index.html        # 403 forbidden
+
+# Allowing access to home directories with SeLinux Booleans
+getsebool -a | grep httpd_enable
+semanage boolean -l
+semanage boolean -l | grep httpd_enable
+setsebool httpd_enable_homedirs on
+
+semanage boolean -l | grep httpd_enable
+semanage boolean -m httpd_enable_homedirs --on     # -m modify, to make both runtime and presistent on mode
+semanage boolean -m httpd_enable_homedirs --off     # -m modify, to make both runtime and presistent off mode
+semanage boolean -l | grep httpd_enable
+
+setsebool httpd_enable_homedirs on
+curl localhost:1000/~<username>/            # now it will work
+```
