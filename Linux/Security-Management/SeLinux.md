@@ -21,8 +21,6 @@ getent network
 getent services
 
 gpasswd -M <user1>,<user2> <grp_name>       # to add user in group for a password
-
-ausearch -m avc     # selinux module search
 ```
 
 ## Working with SeLinux
@@ -289,3 +287,60 @@ semanage boolean -l | grep httpd_enable
 setsebool httpd_enable_homedirs on
 curl localhost:1000/~<username>/            # now it will work
 ```
+
+Troubleshooting SeLinux Issues
+```bash
+# main system audit log file
+cat /var/log/audit/audit.log
+
+# audit search based on -m module 
+ausearch -m ADD_USER -ts recent         # recent == Last 10 mins
+ausearch -m AVC -ts recent              # look for AVC events 
+ausearch -m AVC
+
+ausearch -m AVC -c login                # -c command
+
+ausearch -m AVC -c login | audit2why    # to see the cause of event
+
+ausearch -m AVC -c ping | audit2why
+
+# taking the solution/advice from ausearch
+ausearch -m AVC -c ping | audit2allow
+
+#=========================================
+# Using sealert for Better Diagnostic
+#=========================================
+
+yum install setroubleshoot-server
+grep sealert /var/log/messages
+getsebool -a | grep httpd_enable
+setsebool -P httpd_enable_homedirs off
+
+curl http://localhost:1000/~<username>/
+
+ausearch -m AVC -c httpd -ts recent
+ausearch -m AVC -c httpd -ts recent | audit2why
+ausearch -m AVC -c httpd -ts recent | audit2allow
+
+grep sealert /var/log/messages
+    # copy the selaert command from the log
+    sealert -l <someid>
+
+# If we are having issues with single service or domain with SeLinux, set the domain to be permissive rather than the complete SeLinux system.
+setsebool -P httpd_enable_homedirs 0
+getenforce
+curl http://localhost:1000/~<username>/
+
+semanage permissive -l
+semanage permissive -a httpd_t
+semanage permissive -l
+getenforce
+curl http://localhost:1000/~<username>/
+    # will work since we only restricted selinux to httpd mode
+semanage permissive -d httpd_t
+# fixing the issue that we made
+setsebool -P httpd_enable_homedirs 1
+curl http://localhost:1000/~<username>/
+```
+
+> Note: we can create our own custom SeLinux Module
