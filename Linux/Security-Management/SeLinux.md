@@ -13,7 +13,6 @@ ls -lZ
 # root: staff_r, sysadm_r, system_r, unconfined_r
 
 ps axZ
-semanage user -l
 
 getent passwd
 getent passwd /etc/nsswtich.conf
@@ -160,4 +159,93 @@ echo -e "user1:Password1\nuser2:Password2" | chpasswd
 # Now login with above users and run few command to see diff.
     >>> ping
     >>> id -Z
+```
+
+### SeLinux Lable File System/Process
+
+| User | Role | Type | MLS Level |
+|------|------|------|-----------|
+|system_u|object_r|httpd_sys_content_t|s0|
+|system_u|system_r|httpd_t|s0|
+
+```bash
+>>> seinfo              # list all selinux details
+yum install policycoreutils policycoreutils-devel setools-console httpd attr
+
+systemctl enable --now httpd
+firewall-cmd --add-service=http
+firewall-cmd --runtime-to-permanent
+pgrep http
+ps -Z -p $(pgrep http)
+ls -Zd /var/ww/html
+
+getfattr --help
+getfattr -n security.selinux /var/www/html  # to remove selinux label 
+
+# list types of selinux
+seinfo -t
+
+seinfo -t | grep http
+
+# allow selinux rule details
+sesearch --allow  -s httpd_t -t httpd_sys_content_t | less
+```
+
+### Configuring Web Server with new Document Root
+```bash
+vim /etc/httpd/conf/httpd.conf
+    # Look for DocumentRoot, add new document root or modify the existing /var/www/html
+    DocumentRoot "/repos"
+
+    <Directory "/repos">
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+mkdir -m 2750 /repos                      # 2 - SGID (file create to be owned by group owner only)
+
+ls -ld /repos
+chgrp apache /repos
+ls -ld /repos
+echo "Hello" > /repos/index.html
+ls -l /repos/index.html
+
+systemctl restart httpd
+curl localhost/index.html
+    # gives the 403 Forbidden error
+    # You dont have permission to access index.html on this server
+    # this is due to selinux
+
+# Configuring Selinux to allow access to custom directories
+man semanage-fcontext               # look for examples
+semanage-fcontext -a -t httpd_sys_content_t "/repos(/.*)?"  # copy from example and modify with your requirement/directory
+
+ls -Zd /repos
+
+# we made changes to policy but didn't udpated the filesystem policy
+restorecon -R -v /repos
+ls -Zd /repos
+
+curl localhost/index.html
+
+# Managing port through selinux port
+    # Configuring webserver to listen on new port
+    vim /etc/httpd/conf/httpd.conf
+        # change the Listen from 80 to any port you want
+        Listen 1000
+
+systemctl restart httpd
+    # might give error for denied
+
+seinfo --portcon 80
+semanage port -l | grep http_port_t
+man semanage-port 
+semanage port -a -t http_port_t -p tcp 1000
+semanage port -l -C             # list changes made locally 
+firewall-cmd --add-port=1000/tcp --permanent
+firewall-cmd --reload
+
+systemctl restart httpd
+curl localhost:1000/index.html          # will work
+
 ```
