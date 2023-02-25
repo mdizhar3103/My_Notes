@@ -13,8 +13,6 @@ ls -lZ
 # root: staff_r, sysadm_r, system_r, unconfined_r
 
 ps axZ
-id -Z
-semanage login -l
 semanage user -l
 
 getent passwd
@@ -98,7 +96,7 @@ ls -Z /etc/shadow
     >> ls -Z /etc/shadow
 ```
 
-### SeLinux Users and controlling user access
+# SeLinux Users and controlling user access
 ```bash
 # list selinux user mappings
 semanage login -l           
@@ -121,3 +119,45 @@ semanage login -a -s user_u <username>
 |guest_u|no|no|no|no|
 |xguest_u|yes|no|no|Firefox|
 
+```bash
+# current user selinux context
+id  -Z
+
+# swtich to root user to check the root selinux context
+su - 
+id -Z
+
+# list selinux manage users
+semanage login -l
+
+# changing for __default__
+semanage login -m -s user_u -r s0 __default__
+    # to test login with a normal user with sudo previleges
+    # For ex: logged with izhar user
+    >>> ping <ip>       # this will work
+    >>> su -            # switch to root user, giving correct password will give authentication failure, because of above new semanage login policy which is `user_u`
+    >>> sudo su -i      # will give another big error, same reason
+
+
+# show local changes made to selinux users/semanage
+semanage login -C -l
+
+# assigning selinux user to another user
+semanage login -a -s unconfined_u <username>        # will change the deafault assignment selinux user say (default user was root with unconfined_u, now it will become default with ,<username>)
+    # deleting the default assigment for <username> will make it to got back to default user
+
+
+# Setting for new user
+useradd user1
+semanage login -C -l
+
+useradd user2 -Z guest_u
+semanage login -C -l
+
+# changing password
+echo -e "user1:Password1\nuser2:Password2" | chpasswd
+
+# Now login with above users and run few command to see diff.
+    >>> ping
+    >>> id -Z
+```
