@@ -7,6 +7,7 @@ ps u -U username
 ps l                    # to get nice values
 ps lax
 ps fax                  # tree view of processes
+ps -ef --forest
 # =====================================================================================
 
 # changing nice value
