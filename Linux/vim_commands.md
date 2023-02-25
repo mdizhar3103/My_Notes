@@ -54,6 +54,10 @@
 # set file syntax
 - :set syntax=apache
 
+# set background syntax
+- :set bg=dark
+
+
 # searching with highlight
 - :set hlsearch
 - :set incsearch
