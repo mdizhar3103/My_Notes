@@ -25,48 +25,6 @@ readlink <symbolic_link_filename>
 
 > Soft link, files to files, folder to folder, different filesystem as well
 
-### SUID, SGID, Sticky Bit
-```bash
-touch suidfile
-chmod 4664 suidfile
-ls -l
-    # -rwSrw-r-- (assume the output)
-    # SUID value: 4
-    # S: signifies SUID no execution permission, and to execute file as that user only
-    # s: permission enable for execution
-
-touch sgidfile
-chmod 2664 sgidfile
-ls -l
-    # -rw-rwSr--
-    # S: no execute permission
-
-chmod 2674 sgidfile
-    # -rw-rwsr--
-    # s: execute permission
-
-# Finding SUID, SGID file
-find . -perm /4000  # SUID
-find . -perm /2000  # SGID
-
-# Give both permission
-chmod 6664 bothfile
-ls -l
-    # -rwSrwSr--
-find . -perm /6000      # will list either SUID, SGID or both
-
-# Sticky Bit - sets on directory, only user owner can remove 
-mkdir stickydir  
-ls -l
-chmod +t stickydir
-or
-chmod 1777 stickydir
-ls -ld
-chmod 1666 stickydir
-ls -ld
-    # t: execute permission enabled
-    # T: execute permission not enabled
-```
 
 ### Backup files to remote servers
 ```bash
