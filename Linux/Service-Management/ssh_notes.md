@@ -76,3 +76,47 @@ xeyes       # to see open GUI
 # in oracle linux
 yum config-manager --enable ol8_codeready_builder   # for linux-8
 ```
+
+#### Implementing SSH CA authority
+```bash
+# create a centralize known hosts file.
+touch /etc/ssh/ssh_known_hosts
+
+ssh-keygen -f <filename>_ca
+    # provide a passphrase if you need
+ls
+cat <filename>_ca.pub
+cat <filename>_ca.pub   >> /etc/ssh/ssh_known_hosts     # centralized file for known hosts
+
+vim /etc/ssh/ssh_known_hosts
+    # append the following line before the ssh-rsa to make it as certificate authority config
+    @cert-authority  192.168.43.* 
+    @cert-authority  <dns_domain>           # based on your requirement
+    # For example: @cert-authority  192.168.43.*  ssh-rsa.......
+
+# signing public key
+
+ssh-keygen -s <filename>_ca -I izhar -h -n 192.168.43.72 -V +52w <filename>.pub
+    # <filename>_ca here it is private key
+    # -s signing request
+    # -I identity name we need to assign, for login activity
+    # -h host key
+    # -n for name
+    # -V for validity
+    # <filename>.pub public key you need to sign
+
+scp <filename>-cert.pub    username@ip:/tmp/ssh_host_rsa_key-cert.pub
+    # login to server where the file is copied
+    >>> cp /tmp/ssh_host_rsa_key-cert.pub /etc/ssh
+    >>> echo "HostCertificate /etc/ssh/ssh_host_rsa_key-cert.pub" >> /etc/ssh/sshd_config
+    >>> systemctl restart sshd
+
+# For example:
+# mkdir Izhar
+# cd Izhar/
+# ssh-keygen.exe -f izhar_ca
+# ls
+# cp izhar_ca.pub my_pub_key.pub
+# ssh-keygen.exe -s izhar_ca -I mdizhar -h -n 192.168.1.5 -V +52w my_pub_key.pub
+
+```
