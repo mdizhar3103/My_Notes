@@ -1,4 +1,7 @@
 # Selinux Contexts
+
+> The file /etc/nsswtich.conf tells **getent** where to look for entries. By default, locally but could also be an Identity Vault such as OpenLDAP or AD.
+
 ```bash
 ls -lZ
 
