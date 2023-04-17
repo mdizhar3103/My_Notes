@@ -59,4 +59,14 @@ journalctl -b -1                  # logs of previoud boot
 
 last
 lastlog
+
+# =====================================================================================
+# Running command in background mode using screen
+>>> screen 
+  >>> command               # run the command
+  >>> ctrl + a + d          # detach the screen mode
+>>> screen -list 
+>>> screen -rd <id>         # go to detached running screen 
+>>> screen -X -S <id> quit  # After completion of the command quit the screen
+
 ```
