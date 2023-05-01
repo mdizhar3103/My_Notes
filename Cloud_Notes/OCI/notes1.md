@@ -28,3 +28,21 @@
 ```bash
 ssh -i /home/user/pvt.key -o ProxyCommand="ssh  -W %h:%p -i /home/user/pvt.key opc@<bastion_ip" opc@<instance_internal_ip>
 ```
+
+KVM in OEL-8 (Kernel Based VM)
+------------
+```bash
+# Detect hardware
+grep -e 'vmx' /proc/cpuinfo         # for intel based
+grep -e 'svm' /proc/cpuinfo         # for AMD based
+grep -e 'vendor id' /proc/cpuinfo   # cpu type
+lsmod | grep kvm 
+# install virtualization software
+yum install virt 
+yum info virt 
+yum install virt-install virt-viewer    # installing other dependencies
+virt-host-validate                      # verfiying virtualization (if any check fail follow instruction to correct it)
+systemctl start libvirtd
+systemctl enable libvirtd
+systemctl status libvirtd
+```
