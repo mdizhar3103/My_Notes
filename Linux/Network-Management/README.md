@@ -47,3 +47,23 @@ Securing Hosts and services
 |Filter | INPUT, FORWARD, OUTPUT |
 | NAT | PREROUTING, OUTPUT, POSTROUTING |
 | MANGLE | PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING |
+
+
+
+Packet capturing
+----------------
+```bash
+tcpdump -D
+  # -D: to show you the available interfaces you can collect packet data from
+
+sudo tcpdump -i eth0 -s0 -w sample.pcap
+  # -i: Captures packets coming from and going to interface 
+  # -s: Sets the snaplengh to the maximum size
+  # -w: Writes the capture into a packet capture (pcap) format.
+
+tcpdump -r sample.pcap
+  # -r: to read and output the contents of the pcap file
+
+tcpdump -r sample.pcap host 172.31.37.100 and port 80
+  # filter based on host and port 
+```
