@@ -13,3 +13,6 @@ CNC -> Deployment Server -> Enterprise server (PY920)
 Business -> Login to enterprise server and test the application
 Once everything works fine CNC will promote the changes in Production
 ```
+
+### Oracle DB
+- 	Poor Performance after enabling FIPS 140-2 (Doc ID 2279002.1)
