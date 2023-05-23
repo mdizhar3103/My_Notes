@@ -237,7 +237,80 @@ WAF is a specific form of application firewall that filters, monitors, and block
 
 > Note: WAF works at port 80/443
 
+### OCI DNS Management
+DNS Service Components:
+- **Domain:** Domain names identify a specific location or group of locations on the interest as a whole.
+- **Zone:** A zone is a portion of the DNS namespace. A start of authority record (SOA) defines a zone.
+- **Label:** Labels are prepended to the zone name, separated by a period, to form the name of subdomain.
+- **Child Zone:** Child zones are independent subdomains with their own Start of Authority and Name Server (NS) records.
+- **Resource Records:** A record contains specific domain information for a zone. Each record type contains information called record data (RDATA)
+- **Delegation:** The name servers where your DNS is hosted and managed.
 
+> Note: OCI provides Private DNS Zone also, by default when we create a VCN default private zone are automatically created. we can create explicit Prviate zone, once created we can attach the Private Zone to Compute DNS resolver and associate to manage private views **(Manage Private Views are used to commmunciate VCNs outside the OCI)**.
+
+### DNS Traffic Management
+Common Use cases:
+- __Failover__ - Active and Passive, if one AD goes down the traffic can be routed to other DNS
+- __Cloud Migration__ - Used in migrating on-premise workload.
+- __Load Balancing for scale__
+- __Hybrid Cloud__
+- __Worlwide Geolocation Steering__ - For hosting application in different languages (just an example)
+- __Canary Testing__
+- __Zero Rating Service__
+
+### Attaching Block Volume with multiple instances
+```bash
+1. Select Block volume, click on attached instances.
+2. Attach to instance, attachment type - paravirtualized, access type - Read/Write Shareable.
+3. Select instance 1
+4. Repeat above 3 steps to add other instances.
+
+# Configuring OCFS (cluster file systems which is pre-requisite for shareable volume)
+# Open Port: 7777, 3260 in VCN security list for this service
+# Open the same port on instances firewall
+
+yum install -y ocfs2-tools              # on each shareable instances
+sudo o2cb add-cluster ociocfs2          # create cluster config file
+sudo o2cb add-node ociocfs2 instance-1 --ip <x.x.x.1>
+sudo o2cb add-node ociocfs2 instance-2 --ip <x.x.x.2>
+sudo cat /etc/ocfs2/cluster.conf
+# copy the same cluster.conf file in all shareable instances and run the below commands also in all instances
+sudo /sbin/o2cb.init configure
+    # keep everything default except below value
+    # Cluster to start on boot: ociocfs2    # enter this value
+sudo /sbin/o2cb.init status
+sudo systemctl enable o2cb
+sudo systemctl enable ocfs2
+
+# changing kernel values on all instances
+sudo sysctl kernel.panic=30
+sudo sysctl kernel.panic_on_oops=1
+
+vim /etc/sysctl.conf
+    # add the following entries for persistent
+    kernel.panic=30
+    kernel.panic_on_oops=1
+
+# formatting the block volume
+# Note: This step should be performed on 1st instance
+sudo mkfs.ocfs2 -L "ocfs2" /dev/<device_name for ex: sdb, sdc>
+mkdir /ocfs2
+vim /etc/fstab
+    # add the following entry in fstab
+    /dev/sd_ /ocfs2 ocfs2 _netdev,defaults 0 0
+
+sudo mount -a
+lsblk
+
+# on all other instances
+mkdir /ocfs2
+vim /etc/fstab
+    # add the following entry in fstab
+    /dev/sd_ /ocfs2 ocfs2 _netdev,defaults 0 0
+
+sudo mount -a
+lsblk
+```
 
 **Bastion Jump Host Tunneling Command**
 ```bash
